@@ -5,12 +5,15 @@ sextant = 0.5*(1+sqrt(3)*1j)
 
 class wscanvas(Canvas):
 
-    def __init__(self, map, pal, **kw):
+    def __init__(self, map, rule, pal, **kw):
         Canvas.__init__(self, **kw)
         self.width = int(self['width'])
         self.height = int(self['height'])
+
         self.map = map
+        self.rule = rule
         self.pal = pal
+
         self.dx = self.width/(map.X + sextant*map.Y)
         self.x0 = self.dx*(1+sextant)/2
 
@@ -35,6 +38,9 @@ class wscanvas(Canvas):
         W.bind("q", lambda e: self.zoom(1j**(-1.0/3)))
         W.bind("e", lambda e: self.zoom(1j**(1.0/3)))
 
+        W.bind("<space>", lambda e: self.grow())
+        W.bind("<BackSpace>", lambda e: self.revert())
+
         W.bind("<Escape>", lambda e: self.quit())
 
         self.grid()
@@ -47,6 +53,17 @@ class wscanvas(Canvas):
         self.dx *= delta
         self.x0 = (self.x0 - self._window_center()) * delta + self._window_center()
         self.draw_map()
+
+    def grow(self):
+        self.map = self.map.grow(self.rule)
+        self.dx /= (1 + sextant)
+        self.draw_map()
+
+    def revert(self):
+        if self.map.parent is not None:
+            self.map = self.map.parent
+            self.dx *= (1 + sextant)
+            self.draw_map()
 
     def run(self):
         self.draw_map()

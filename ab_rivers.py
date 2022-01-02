@@ -36,4 +36,4 @@ pal1 = {'land':(2,2),'sea':(4,4), 'riv1':(6,4), 'riv2':(6,4)}
 
 # display(my_map,pal1)
 
-wscanvas(my_map, wscpal, width=800,height=600).run();
+wscanvas(my_map, rule1, wscpal, width=800,height=700).run();

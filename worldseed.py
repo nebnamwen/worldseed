@@ -22,6 +22,7 @@ class Map(list):
         for y in range(Y, X+Y):
             assert len(self[y]) == X
         self.X, self.Y = X, Y
+        self.parent = None
 
     def coordinates(self):
         """Return valid coordinates in map grid as a list of tuples."""
@@ -57,6 +58,7 @@ class Map(list):
         def growfix(x, y):
             return (x - y), (x + 2*y)
         M = self.new(*self.XYfix(*growfix(self.X, self.Y)))
+        M.parent = self
         for x, y in self.coordinates():
             a = self[y][x]
             x, y = M.modfix(*growfix(x,y))
@@ -75,13 +77,14 @@ class Map(list):
                 M[y][x] = r.apply(abc,p-1)
         return M.grow(r,ni-1)
 
+    @staticmethod
     def XYfix(X, Y):
         """Rotate X,Y into first sextant."""
         while (X < 0 or Y <= 0):
             X, Y = X+Y, -X
         return X, Y
-    XYfix = staticmethod(XYfix)
 
+    @classmethod
     def new(cls, X, Y, sel = {None: 1}):
         """Return a new map of size X,Y seeded by a selector, or with None."""
         sel = selector(sel)
@@ -95,7 +98,6 @@ class Map(list):
             for x in range(X):
                 L[-1].append(sel.pick())
         return cls(L)
-    new = classmethod(new)
 
 class rule(dict):
 
@@ -140,6 +142,7 @@ class rule(dict):
         assert self.has_key(key)
         return self[key][par].pick()
 
+    @classmethod
     def new(cls,colors):
         """Return a rule giving the default distribution over a sequence of colors."""
         D = {}
@@ -158,7 +161,6 @@ class rule(dict):
                         for x in [a,b,c]:
                             D[(a,b,c)][p][x] = 1
         return cls(D)
-    new = classmethod(new)
 
     def addcolors(self,colors):
         newrule = self.__class__.new(self.colors+colors)
