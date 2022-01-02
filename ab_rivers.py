@@ -1,4 +1,5 @@
 from worldseed import *;
+from wscanvas import wscanvas;
 
 my_map = Map([['riv1','riv2','sea'],['land','land','land'],['land']])
 
@@ -26,11 +27,13 @@ rule1 = rule({
 	('sea', 'sea', 'sea'): [{'sea': 1}, {'sea': 1}]
 	})
 
-# wscpal = {'land':'#80ff00', 'sea':'#0000ff','mount':'#808080', 'woods':'#008000', 'riv1':'#0080ff', 'riv2':'#3080ff', 'desert':'#ff8000'}
+wscpal = {'land':'#80ff00', 'sea':'#0000ff','mount':'#808080', 'woods':'#008000', 'riv1':'#0080ff', 'riv2':'#3080ff', 'desert':'#ff8000'}
 
-for i in range(8):
+for i in range(5):
     my_map = my_map.grow(rule1)
 
 pal1 = {'land':(2,2),'sea':(4,4), 'riv1':(6,4), 'riv2':(6,4)}
 
-display(my_map,pal1)
+# display(my_map,pal1)
+
+wscanvas(my_map, wscpal, width=800,height=600).run();
