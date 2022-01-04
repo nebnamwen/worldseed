@@ -57,11 +57,12 @@ class Map(list):
             return (x - y), (x + 2*y)
         M = self.new(*self.XYfix(*growfix(self.X, self.Y)))
         M.parent = self
-        AB = [[randrange(2) for item in row] for row in M]
+        AB = {}
         for x, y in self.coordinates():
             a = self[y][x]
             x, y = M.modfix(*growfix(x,y))
             M[y][x] = a
+            AB[(y,x)] = randrange(2)
         o = ((-1,0),(1,-1),(0,1))
         for x, y in M.coordinates():
             p = (x-y)%3
@@ -70,7 +71,7 @@ class Map(list):
                 abc = []
                 for n in range(3):
                     x_, y_ = M.modfix(x+k*o[n][0],y+k*o[n][1])
-                    abc.append((M[y_][x_],AB[y_][x_])) 
+                    abc.append((M[y_][x_],AB[(y_,x_)])) 
                 M[y][x] = r.apply(abc,p-1)
         return M.grow(r,ni-1)
 
@@ -139,9 +140,6 @@ class rule(dict):
             for r in rows:
                 rkey = tuple(sorted(r[0:3]) + [r[3]])
                 self[rkey] = sel
-
-        for key in self.keys():
-            print key
 
     def apply(self,key,par):
         """Use rule to choose color for cell at vertex with given neighbors and parity."""
