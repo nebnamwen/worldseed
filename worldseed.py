@@ -1,8 +1,6 @@
-#!/usr/bin/python -i
-
 """WorldSeed: a system for generating fractal hex maps"""
 
-import sys, random, curses
+from random import random, randrange
 
 class Map(list):
 
@@ -59,6 +57,7 @@ class Map(list):
             return (x - y), (x + 2*y)
         M = self.new(*self.XYfix(*growfix(self.X, self.Y)))
         M.parent = self
+        AB = [[randrange(2) for item in row] for row in M]
         for x, y in self.coordinates():
             a = self[y][x]
             x, y = M.modfix(*growfix(x,y))
@@ -71,9 +70,7 @@ class Map(list):
                 abc = []
                 for n in range(3):
                     x_, y_ = M.modfix(x+k*o[n][0],y+k*o[n][1])
-                    abc.append(M[y_][x_]) 
-                abc = tuple(abc)
-                
+                    abc.append((M[y_][x_],AB[y_][x_])) 
                 M[y][x] = r.apply(abc,p-1)
         return M.grow(r,ni-1)
 
@@ -101,75 +98,59 @@ class Map(list):
 
 class rule(dict):
 
-    """Map growth rule representation (as a dict)
-
-    rule(mapping) -> rule from mapping having the following structure:
-    - Each key in mapping is a sorted 3-tuple.
-    - Every sorted 3-tuple of values that occur in keys occurs as a key.
-    - Each value in mapping is a 2-list.
-    - Each element of this 2-list is a non-empty mapping.
-    - The values in this mapping are positive numbers.
-
-    rule.new(colors) -> rule giving a default distribution over a list of colors.
-    """
+    """Map growth rule representation (as a dict)"""
 
     def __init__(self,D):
-        """Initialize rule from mapping having appropriate structure."""
-        dict.__init__(self,D)
-        colors = {}
-        for k in self.keys():
-            assert isinstance(k, tuple)
-            assert len(k) == 3
-            for c in k:
-                colors[c] = 1
-        colors = colors.keys()
-        colors.sort()
-        for a in colors:
-            for b in [x for x in colors if x >= a]:
-                for c in [x for x in colors if x >= b]:
-                    abc = (a,b,c)
-                    assert self.has_key(abc)
-                    assert len(self[abc]) == 2
-                    for p in range(2):
-                        self[abc][p] = selector(self[abc][p])
-        self.colors = colors
+        dict.__init__(self,{})
+        for key in D:
+            index = 0
+            colors = [None] * 3
+            connections = [None] * 3
+            parity = None
+
+            for term in key:
+                if term in (True, False):
+                    connections[index-1] = term
+                elif term in (0,1):
+                    parity = term
+                else:
+                    colors[index] = term
+                    index += 1
+
+            rows = []
+            for i in range(2):
+                for j in range(2):
+                    for k in range(2):
+                        for p in range(2):
+                            rows.append([(colors[0],i),(colors[1],j),(colors[2],k),p])
+
+            for i in range(3):
+                if connections[i] is not None:
+                    rows = [
+                        r for r in rows
+                        if (r[i][1] ^ r[(i+1) % 3][1] ^ r[3] == 0) is connections[i]
+                        ]
+
+            if parity is not None:
+                rows = [ r for r in rows if r[3] == parity ]
+
+            sel = selector(D[key])
+
+            for r in rows:
+                rkey = tuple(sorted(r[0:3]) + [r[3]])
+                self[rkey] = sel
+
+        for key in self.keys():
+            print key
 
     def apply(self,key,par):
         """Use rule to choose color for cell at vertex with given neighbors and parity."""
-        L = list(key)
-        L.sort()
-        key = tuple(L)
-        assert self.has_key(key)
-        return self[key][par].pick()
-
-    @classmethod
-    def new(cls,colors):
-        """Return a rule giving the default distribution over a sequence of colors."""
-        D = {}
-        for a in colors:
-            D[(a,a,a)] = [{},{}]
-            for p in range(2):
-                D[(a,a,a)][p][a] = 1
-            for b in [x for x in colors if x > a]:
-                for x in [a,b]: D[(a,x,b)] = [{},{}]
-                for p in range(2):
-                    D[(a,a,b)][p][a] = D[(a,b,b)][p][b] = 2
-                    D[(a,a,b)][p][b] = D[(a,b,b)][p][a] = 1
-                for c in [x for x in colors if x > b]:
-                    D[(a,b,c)] = [{},{}]
-                    for p in range(2):
-                        for x in [a,b,c]:
-                            D[(a,b,c)][p][x] = 1
-        return cls(D)
-
-    def addcolors(self,colors):
-        newrule = self.__class__.new(self.colors+colors)
-        for key in self.keys():
-            newrule[key] = self[key]
-        self.__init__(newrule)
-
-    def addcolor(self,color):
-        self.addcolors([color])
+        key = tuple(sorted(key) + [par])
+        if self.has_key(key):
+            return self[key].pick()
+        else:
+            print None, key
+            return None
 
 class selector(dict):
 
@@ -191,51 +172,11 @@ class selector(dict):
             self[k] = float(self[k])/S
             if self[k] == 0: del self[k]
 
-    def pick(self, source = random.random):
-        """Chose a key from selector with probability self[key].
-
-        Uses random.random, or supply another 0-argument function
-        that returns a random number in [0, 1).
-        """
-        self.normalize()
+    def pick(self):
+        """Chose a key from selector with probability self[key]."""
         s = 0
-        r = source()
+        r = random()
         for k in self.keys():
             s = s + self[k]
             if s > r: return k
         return None
-
-    def set(self, key, val):
-        """Set probability of key to value, adjust other values so total remains 1.0."""
-        s = sum([self[k] for k in self.keys() if k != key])
-        if val < 0 or val > 1 or s == 0: return None
-        s = (1.0 - val)/s
-        for k in self.keys():
-            self[k] = self[k] * s
-        self[key] = val
-
-    def adjust(self, D):
-        """Adjust relative probabilities of given keys while maintaining their total."""
-        s = sum(D.values())
-        r = sum([self[k] for k in self.keys() if k not in D.keys()])
-        for k in D.keys():
-            self[k] = D[k]*(1.0-r)/s
-
-def display(M, pal):
-    """Display map using palette.
-
-    Palette is a mapping whose keys are map colors and whose values are 2-tuples
-    of ANSI colors: (black, red, green, yellow, blue, magenta, cyan, white).
-    """
-    sys.stdout.write(chr(27)+")0"+chr(14))
-    for y in range(len(M)):
-        sys.stdout.write(" " * y)
-        for a in M[y]:
-            if pal.has_key(a):
-                fg, bg = pal[a]
-                sys.stdout.write(chr(27)+"[3"+str(fg)+";4"+str(bg)+"maa")
-            else:
-                sys.stdout.write(chr(27)+"[30;47mvw")
-        sys.stdout.write(chr(27)+"[0m\n")
-    sys.stdout.write(chr(15))
-    sys.stdout.flush()
