@@ -110,9 +110,9 @@ class rule(dict):
             parity = None
 
             for term in key:
-                if term in (True, False):
+                if type(term) is bool:
                     connections[index-1] = term
-                elif term in (0,1):
+                elif type(term) is int:
                     parity = term
                 else:
                     colors[index] = term
@@ -124,6 +124,8 @@ class rule(dict):
                     for k in range(2):
                         for p in range(2):
                             rows.append([(colors[0],i),(colors[1],j),(colors[2],k),p])
+
+            print key, connections
 
             for i in range(3):
                 if connections[i] is not None:
