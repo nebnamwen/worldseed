@@ -10,7 +10,7 @@ class Map(list):
     Map.new(X,Y[,s]) -> map of size X,Y seeded by selector s, or with None.
     """
 
-    def __init__(self,L=[]):
+    def __init__(self,L=[], useAB=True):
         """Initialize map with contents of sequence having (X+Y)*Y+X*X structure."""
         list.__init__(self,L)
         X = len(self[-1])
@@ -20,6 +20,7 @@ class Map(list):
         for y in range(Y, X+Y):
             assert len(self[y]) == X
         self.X, self.Y = X, Y
+        self.useAB = useAB
         self.parent = None
 
     def coordinates(self):
@@ -56,23 +57,30 @@ class Map(list):
         def growfix(x, y):
             return (x - y), (x + 2*y)
         M = self.new(*self.XYfix(*growfix(self.X, self.Y)))
+        M.useAB = self.useAB
         M.parent = self
+
         AB = {}
+
         for x, y in self.coordinates():
             a = self[y][x]
             x, y = M.modfix(*growfix(x,y))
             M[y][x] = a
-            AB[(y,x)] = randrange(2)
+            AB[(x,y)] = randrange(self.useAB + 1)
+
         o = ((-1,0),(1,-1),(0,1))
         for x, y in M.coordinates():
             p = (x-y)%3
             if p:
                 k = 3 - p*2
+                nxy = [ M.modfix(x+k*o[n][0],y+k*o[n][1]) for n in range(3) ]
                 abc = []
                 for n in range(3):
-                    x_, y_ = M.modfix(x+k*o[n][0],y+k*o[n][1])
-                    abc.append((M[y_][x_],AB[(y_,x_)])) 
-                M[y][x] = r.apply(abc,p-1)
+                    x_, y_ = nxy[n]
+                    abc.append(M[y_][x_])
+                    abc.append(AB[(x_,y_)] ^ AB[nxy[(n+1)%3]] ^ (p-1))
+                M[y][x] = r.apply(abc)
+
         return M.grow(r,ni-1)
 
     @staticmethod
@@ -107,50 +115,50 @@ class rule(dict):
             index = 0
             colors = [None] * 3
             connections = [None] * 3
-            parity = None
 
             for term in key:
-                if type(term) is bool:
+                if term in (True, False):
                     connections[index-1] = term
-                elif type(term) is int:
-                    parity = term
                 else:
                     colors[index] = term
                     index += 1
 
             rows = []
             for i in range(2):
-                for j in range(2):
-                    for k in range(2):
-                        for p in range(2):
-                            rows.append([(colors[0],i),(colors[1],j),(colors[2],k),p])
-
-            print key, connections
-
-            for i in range(3):
-                if connections[i] is not None:
-                    rows = [
-                        r for r in rows
-                        if (r[i][1] ^ r[(i+1) % 3][1] ^ r[3] == 0) is connections[i]
-                        ]
-
-            if parity is not None:
-                rows = [ r for r in rows if r[3] == parity ]
+                if connections[0] in (None, i):
+                    for j in range(2):
+                        if connections[1] in (None, j):
+                            for k in range(2):
+                                if connections[2] in (None, k):
+                                    rows.append([colors[0],i,colors[1],j,colors[2],k])
 
             sel = selector(D[key])
 
             for r in rows:
-                rkey = tuple(sorted(r[0:3]) + [r[3]])
+                rkey = self._fix_key(r)
                 self[rkey] = sel
 
-    def apply(self,key,par):
+    def apply(self,key):
         """Use rule to choose color for cell at vertex with given neighbors and parity."""
-        key = tuple(sorted(key) + [par])
+        key = self._fix_key(key)
         if self.has_key(key):
             return self[key].pick()
         else:
             print None, key
             return None
+
+    @staticmethod
+    def _fix_key(key):
+        permutations = [
+            [0,1,2,3,4,5],
+            [2,3,4,5,0,1],
+            [4,5,0,1,2,3],
+            [0,5,4,3,2,1],
+            [2,1,0,5,4,3],
+            [4,3,2,1,0,5]
+            ]
+
+        return tuple(min([ [key[i] for i in p] for p in permutations ]))
 
 class selector(dict):
 
