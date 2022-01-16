@@ -1,7 +1,7 @@
 from worldseed import *;
-from wscanvas import wscanvas;
+from ws_goldberg import ws_goldberg;
 
-my_map = Map([['riv','riv','sea'],['land','land','land'],['land']])
+my_seed = selector({'land':2, 'sea':2, 'riv':1})
 
 rule1 = rule({
         ('land','land','land'): {'land':1},
@@ -27,4 +27,4 @@ wscpal = {
     'riv':'#0080ff'
     }
 
-wscanvas(my_map, rule1, wscpal, width=800,height=700).run();
+ws_goldberg(my_seed, rule1, wscpal).run();

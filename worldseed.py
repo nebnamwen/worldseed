@@ -51,12 +51,22 @@ class Map(list):
             D[self[y][x]] = 1
         return D.keys()
 
+    @staticmethod
+    def growfix(x, y):
+        return (x - y), (x + 2*y)
+
+    @staticmethod
+    def XYfix(X, Y):
+        """Rotate X,Y into first sextant."""
+        while (X < 0 or Y <= 0):
+            X, Y = X+Y, -X
+        return X, Y
+
     def grow(self, r, ni=1):
         """Apply growth rule to map and return a new map."""
         if ni == 0: return self
-        def growfix(x, y):
-            return (x - y), (x + 2*y)
-        M = self.new(*self.XYfix(*growfix(self.X, self.Y)))
+
+        M = self.new(*self.XYfix(*self.growfix(self.X, self.Y)))
         M.useAB = self.useAB
         M.parent = self
 
@@ -64,7 +74,7 @@ class Map(list):
 
         for x, y in self.coordinates():
             a = self[y][x]
-            x, y = M.modfix(*growfix(x,y))
+            x, y = M.modfix(*self.growfix(x,y))
             M[y][x] = a
             AB[(x,y)] = randrange(self.useAB + 1)
 
@@ -82,13 +92,6 @@ class Map(list):
                 M[y][x] = r.apply(abc)
 
         return M.grow(r,ni-1)
-
-    @staticmethod
-    def XYfix(X, Y):
-        """Rotate X,Y into first sextant."""
-        while (X < 0 or Y <= 0):
-            X, Y = X+Y, -X
-        return X, Y
 
     @classmethod
     def new(cls, X, Y, sel = {None: 1}):
