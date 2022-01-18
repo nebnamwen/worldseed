@@ -16,7 +16,7 @@ class ws_goldberg(game):
 
         for p in self.gn:
             t = seed.pick()
-            self.add_thing(filled_hex(location=p, layer=0, type=t, color=self.pal[t]))
+            self.add_thing(ws_hex(location=p, layer=0, type=t, color=self.pal[t]))
 
     def run(self):
         gcanvas(self, zoom=0.875).run()
@@ -48,7 +48,7 @@ class ws_goldberg(game):
                     else:
                         key.append(connect[gvector.sum(p,gn_[p][i])] == p)
                 t = self.rule.apply(key)
-                new_hexes.append(filled_hex(location=p, layer=0, type=t, color=self.pal[t]))
+                new_hexes.append(ws_hex(location=p, layer=0, type=t, color=self.pal[t]))
 
         for h in new_hexes:
             self.add_thing(h)
@@ -56,3 +56,7 @@ class ws_goldberg(game):
         self.update_thing(self, gn = gn_)
         self.update_thing(self, M = M_)
         self.update_thing(self, N = N_)
+
+class ws_hex(filled_hex):
+    def draw(self, gc):
+        self.draw_face(gc, width=1)
