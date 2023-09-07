@@ -1,4 +1,4 @@
-from Tkinter import *
+from tkinter import *
 from math import *
 
 sextant = 0.5*(1+sqrt(3)*1j)

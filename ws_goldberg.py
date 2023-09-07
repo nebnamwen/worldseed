@@ -25,8 +25,8 @@ class ws_goldberg(game):
         M_, N_ = Map.XYfix(*Map.growfix(self.M,self.N))
         gn_ = gnet(M_, N_)
 
-        L = gvector.decode([ p for p in self.gn if gvector.decode(p).keys() == ['A'] ][0])['A']
-        L_ = gvector.decode([ p for p in gn_ if gvector.decode(p).keys() == ['A'] ][0])['A']
+        L = gvector.decode([ p for p in self.gn if list(gvector.decode(p).keys()) == ['A'] ][0])['A']
+        L_ = gvector.decode([ p for p in gn_ if list(gvector.decode(p).keys()) == ['A'] ][0])['A']
 
         for p in self.gn:
             for t in self.things[p]:

@@ -36,9 +36,9 @@ class Map(list):
         X, Y = self.X, self.Y
         R = X + Y
         if (x < 0 or y < 0 or x >= R or y >= R or (x >= X and y >= Y)):
-            d = (X*x+X*y+Y*y)/(X*X+X*Y+Y*Y)
+            d = (X*x+X*y+Y*y)//(X*X+X*Y+Y*Y)
             x, y = x - d*X, y - d*Y
-            d = x/R
+            d = x//R
             x, y = x - R*d, y + X*d
             if y < 0: x, y = x+X, y+Y
             if x >= R: x, y = x-R, y+X
@@ -144,10 +144,10 @@ class rule(dict):
     def apply(self,key):
         """Use rule to choose color for cell at vertex with given neighbors and parity."""
         key = self._fix_key(key)
-        if self.has_key(key):
+        if key in self:
             return self[key].pick()
         else:
-            print None, key
+            print(None, key)
             return None
 
     @staticmethod
