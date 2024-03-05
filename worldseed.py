@@ -179,9 +179,12 @@ class selector(dict):
     def normalize(self):
         """Scale values so they sum to 1.0."""
         S = sum(self.values())
+        delkeys = []
         for k in self.keys():
             self[k] = float(self[k])/S
-            if self[k] == 0: del self[k]
+            if self[k] == 0: delkeys.append(k)
+        for k in delkeys:
+            del self[k]
 
     def pick(self):
         """Chose a key from selector with probability self[key]."""
